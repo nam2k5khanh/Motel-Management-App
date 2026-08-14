@@ -16,7 +16,7 @@ public class FileUploadController {
     @PostMapping("/image")
     public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
-            String imageUrl = storageService.uploadFile(file);
+            String imageUrl = storageService.storeFile(file);
             return ResponseEntity.ok(imageUrl); // Trả về URL ảnh dạng https://...
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Upload thất bại: " + e.getMessage());

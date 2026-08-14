@@ -1,18 +1,19 @@
 package com.motel.backend.service;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.UUID;
 
 @Service
 public class SupabaseStorageService {
 
-    // Thêm các thông số này vào application.properties
     @Value("${supabase.url}")
     private String supabaseUrl;
 
@@ -22,29 +23,47 @@ public class SupabaseStorageService {
     @Value("${supabase.bucket-name:motel-images}")
     private String bucketName;
 
-    public String uploadFile(MultipartFile file) throws IOException {
-        // Tạo tên file ngẫu nhiên để tránh trùng lặp (vd: 550e8400-e29b...-phong1.jpg)
-        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
 
-        // URL Endpoint upload của Supabase Storage API
-        String uploadUrl = supabaseUrl + "/storage/v1/object/" + bucketName + "/" + fileName;
+    public String storeFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
 
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + supabaseKey);
-        headers.set("apiKey", supabaseKey);
-        headers.setContentType(MediaType.valueOf(file.getContentType()));
+        try {
+            // Lấy đuôi file (.jpg, .png, ...)
+            String originalFileName = file.getOriginalFilename();
+            String extension = "";
+            if (originalFileName != null && originalFileName.contains(".")) {
+                extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            }
 
-        HttpEntity<byte[]> requestEntity = new HttpEntity<>(file.getBytes(), headers);
+            // Tạo tên file duy nhất tránh bị trùng lặp
+            String fileName = System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
 
-        // Gọi API PUT đẩy file lên Supabase
-        ResponseEntity<String> response = restTemplate.exchange(uploadUrl, HttpMethod.PUT, requestEntity, String.class);
+            // Đường dẫn API Upload của Supabase Storage
+            String uploadUrl = supabaseUrl + "/storage/v1/object/" + bucketName + "/" + fileName;
 
-        if (response.getStatusCode().is2xxSuccessful()) {
-            // Trả về URL công khai của ảnh để lưu vào MySQL Database
-            return supabaseUrl + "/storage/v1/object/public/" + bucketName + "/" + fileName;
-        } else {
-            throw new RuntimeException("Lỗi upload ảnh lên Supabase: " + response.getBody());
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(uploadUrl))
+                    .header("Authorization", "Bearer " + supabaseKey)
+                    .header("apiKey", supabaseKey)
+                    .header("Content-Type", file.getContentType() != null ? file.getContentType() : "application/octet-stream")
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200 || response.statusCode() == 201) {
+                // Trả về trực tiếp Public URL dùng được ngay trên cả Web lẫn App!
+                return supabaseUrl + "/storage/v1/object/public/" + bucketName + "/" + fileName;
+            } else {
+                throw new RuntimeException("Lỗi upload Supabase (Mã " + response.statusCode() + "): " + response.body());
+            }
+
+        } catch (IOException | InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Lỗi khi kết nối với Supabase Storage: " + e.getMessage(), e);
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.motel.backend.service;
 
 import com.motel.backend.dto.RepairRequestDTO;
-import com.motel.backend.dto.request.RepairUpdateStatus;
 import com.motel.backend.entity.RepairRequest;
 import com.motel.backend.repository.RepairRequestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +18,9 @@ public class RepairRequestService {
     @Autowired
     private ContractService contractService;
 
+    // Đổi sang SupabaseStorageService
     @Autowired
-    private FileStorageService fileStorageService;
+    private SupabaseStorageService supabaseStorageService;
 
     public List<RepairRequest> getAllRequests() {
         return repairRequestRepository.findAll();
@@ -40,15 +40,7 @@ public class RepairRequestService {
     }
 
     public RepairRequest createRequest(RepairRequestDTO dto) {
-        System.out.print(dto.getTenantId());
-        System.out.print(dto.getCategory());
-        System.out.print(dto.getDescription());
-        System.out.print(dto.getPriority());
-        System.out.print(dto.getTenantId());
-        System.out.print(dto.getTenantId());
-
-
-        // 1. Kiểm tra validate dữ liệu bắt buộc
+        // 1. Validate dữ liệu
         if (dto.getRoomId() == null) {
             Long roomId = contractService.getContractByTenantIdAndStatus(dto.getTenantId(), "ACTIVE").getRoom().getId();
             dto.setRoomId(roomId);
@@ -57,25 +49,24 @@ public class RepairRequestService {
             throw new IllegalArgumentException("Mã người thuê (tenantId) không được để trống!");
         }
 
-        // 2. Upload file ảnh nếu có (nếu dự án bạn sử dụng Cloudinary hoặc lưu local)
+        // 2. Upload file trực tiếp lên Supabase
         String imageUrl = null;
         if (dto.getImage() != null && !dto.getImage().isEmpty()) {
-            imageUrl = fileStorageService.storeFile(dto.getImage());
+            imageUrl = supabaseStorageService.storeFile(dto.getImage());
         }
 
-        // 3. Khởi tạo Entity bằng Builder (do Entity có annotation @Builder)
+        // 3. Khởi tạo Entity
         RepairRequest request = RepairRequest.builder()
-                .tenantId(dto.getTenantId()) // BẮT BUỘC KHÔNG ĐƯỢC NULL
-                .roomId(dto.getRoomId())     // BẮT BUỘC KHÔNG ĐƯỢC NULL
+                .tenantId(dto.getTenantId())
+                .roomId(dto.getRoomId())
                 .title(dto.getTitle())
                 .description(dto.getDescription())
                 .category(dto.getCategory() != null ? dto.getCategory() : RepairRequest.Category.OTHER)
                 .priority(dto.getPriority() != null ? dto.getPriority() : RepairRequest.Priority.MEDIUM)
                 .status(RepairRequest.Status.PENDING)
-                .imageUrl(imageUrl)
+                .imageUrl(imageUrl) // Sẽ lưu thẳng link public: https://...supabase.co/...
                 .build();
 
-        // 4. Lưu vào cơ sở dữ liệu
         return repairRequestRepository.save(request);
     }
 
@@ -96,7 +87,7 @@ public class RepairRequestService {
         request.setPriority(dto.getPriority());
 
         if (dto.getImage() != null && !dto.getImage().isEmpty()) {
-            request.setImageUrl(fileStorageService.storeFile(dto.getImage()));
+            request.setImageUrl(supabaseStorageService.storeFile(dto.getImage()));
         } else if (dto.getImageUrl() != null) {
             request.setImageUrl(dto.getImageUrl());
         }
