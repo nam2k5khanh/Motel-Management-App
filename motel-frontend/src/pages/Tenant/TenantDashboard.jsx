@@ -88,7 +88,7 @@ export default function TenantDashboard() {
           // Tải Hóa đơn & Thông báo
           const [billRes, noticeRes] = await Promise.allSettled([
             axiosClient.get(`/invoices/latest/${userId}`),
-            axiosClient.get('/announcements/tenant'),
+            axiosClient.get(`/notifications/user/${userId}`),
           ]);
 
           if (billRes.status === 'fulfilled') setCurrentBill(billRes.value.data);
