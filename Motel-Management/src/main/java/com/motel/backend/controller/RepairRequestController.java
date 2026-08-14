@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/repair-requests")
-@CrossOrigin(origins = "*") // Hoặc cấu hình theo SecurityConfig của bạn
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class RepairRequestController {
 
     @Autowired
