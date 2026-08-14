@@ -2,16 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import TenantSidebar from '../../components/Sidebar';
 import axiosClient from '../../api/axiosClient';
 
-// 1. URL Domain Backend để ghép link xem ảnh
-const BASE_URL = 'http://localhost:8080';
-
-// Helper ghép URL ảnh
+// Helper ghép URL ảnh (Hỗ trợ cả Supabase URL và ảnh nội bộ nếu có)
 const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
+  // Nếu là link Supabase hoặc link tuyệt đối (http:// hoặc https://) -> Dùng trực tiếp
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
-  return `${BASE_URL}${imagePath}`;
+  // Nếu là đường dẫn tương đối cũ, lấy baseURL từ axiosClient
+  const baseUrl = axiosClient.defaults.baseURL || '';
+  return `${baseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
 };
 
 export default function TenantRepairRequest() {
@@ -140,7 +140,6 @@ export default function TenantRepairRequest() {
         data.append('image', formData.image);
       }
 
-      // Đã bỏ Header Content-Type thủ công để Axios tự sinh boundary
       await axiosClient.post('/repair-requests', data);
 
       alert('Gửi báo cáo sự cố thành công!');
@@ -372,7 +371,7 @@ export default function TenantRepairRequest() {
                         {item.description}
                       </p>
 
-                      {/* Hiển thị hình ảnh đính kèm nếu có */}
+                      {/* Hiển thị hình ảnh đính kèm từ Supabase nếu có */}
                       {item.imageUrl && (
                         <div className="mb-2">
                           <img
@@ -405,7 +404,7 @@ export default function TenantRepairRequest() {
         </div>
       </div>
 
-      {/* MODAL PHÓNG TO ẢNH KHI NGƯỜI DÙNG NHẤP VÀO ẢNH */}
+      {/* MODAL PHÓNG TO ẢNH */}
       {selectedImage && (
         <div 
           className="modal fade show d-block" 

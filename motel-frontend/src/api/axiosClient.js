@@ -10,6 +10,15 @@ const axiosClient = axios.create({
   baseURL: BASE_URL,
 });
 
+export const uploadImageApi = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  // Gọi endpoint /api/upload/image của Spring Boot
+  const response = await axiosClient.post("/upload/image", formData);
+  return response.data;
+};
+
 // Interceptor cho Request
 axiosClient.interceptors.request.use(
   (config) => {
