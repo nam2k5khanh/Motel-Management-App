@@ -32,11 +32,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            AuthResponse user = authService.login(request);
-            return ResponseEntity.ok(user);
-        } catch (RuntimeException e) {
+            AuthResponse response = authService.login(loginRequest);
+            return ResponseEntity.ok(response);
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Tên đăng nhập hoặc mật khẩu không chính xác!"));
+        } catch (Exception e) {
+            // Bắt các ngoại lệ khác và trả 400 Bad Request kèm message rõ ràng
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", e.getMessage()));
         }
