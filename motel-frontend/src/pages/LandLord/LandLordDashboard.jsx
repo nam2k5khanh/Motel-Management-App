@@ -9,7 +9,7 @@ export default function LandlordDashboard() {
     rentedRooms: 0,
     emptyRooms: 0
   });
-  const [notifications, setNotifications] = useState([]); // State lưu danh sách thông báo
+  const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -19,7 +19,6 @@ export default function LandlordDashboard() {
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      // Ưu tiên lấy userId chính xác từ localStorage
       const storedUserId = localStorage.getItem('userId');
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       const userId = storedUserId || storedUser.id || storedUser.userId || '1';
@@ -28,7 +27,6 @@ export default function LandlordDashboard() {
       const month = currentDate.getMonth() + 1;
       const year = currentDate.getFullYear();
 
-      // Gọi đồng thời Dashboard, Danh sách Dãy trọ và Danh sách Thông báo
       const [resDashboard, resMotels, resNotifications] = await Promise.allSettled([
         axiosClient.get(`/dashboard?userId=${userId}`).catch(() => axiosClient.get('/dashboard/summary')),
         axiosClient.get(`/motels?userId=${userId}`),
@@ -44,7 +42,6 @@ export default function LandlordDashboard() {
       let currentMonthRevenue = 0;
 
       if (motels.length > 0) {
-        // Lấy hóa đơn tháng này của tất cả các dãy trọ
         const invoicePromises = motels.map(m =>
           axiosClient.get(`/invoices?motelId=${m.id}&month=${month}&year=${year}`).catch(() => ({ data: [] }))
         );
@@ -62,7 +59,6 @@ export default function LandlordDashboard() {
         });
       }
 
-      // Cập nhật state thống kê
       setSummary({
         totalRevenue: currentMonthRevenue,
         totalRooms: dashboardData.totalRooms || 0,
@@ -86,101 +82,126 @@ export default function LandlordDashboard() {
     : 0;
 
   return (
-    <div className="d-flex">
-      {/* Sidebar cố định bên trái */}
+    <div className="d-flex flex-column flex-md-row min-vh-100">
+      {/* CSS Nhúng trực tiếp xử lý Responsive Margin & Layout */}
+      <style>{`
+        .dashboard-main-content {
+          margin-left: 0 !important;
+          width: 100%;
+        }
+        @media (min-width: 768px) {
+          .dashboard-main-content {
+            margin-left: 260px !important;
+            width: calc(100% - 260px);
+          }
+        }
+      `}</style>
+
+      {/* Sidebar */}
       <Sidebar />
 
-      {/* Nội dung chính thụt lề 260px khớp với Sidebar */}
-      <div className="flex-grow-1 p-4 bg-light min-vh-100" style={{ marginLeft: '260px' }}>
+      {/* Nội dung chính linh hoạt theo màn hình */}
+      <div className="dashboard-main-content flex-grow-1 p-3 p-md-4 bg-light">
         
-        {/* HEADER: Tiêu đề + Nút Cập nhật dữ liệu */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
+        {/* HEADER: Tiêu đề + Nút Cập nhật */}
+        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
           <div>
-            <h3 className="fw-bold mb-1">🏠 Trang Chủ Quản Lý</h3>
+            <h3 className="fw-bold mb-1 fs-4 fs-md-3">🏠 Trang Chủ Quản Lý</h3>
             <p className="text-muted small m-0">
               Tổng quan tình hình kinh doanh tháng {new Date().getMonth() + 1}/{new Date().getFullYear()}
             </p>
           </div>
 
-          {/* Nút Refresh dữ liệu */}
-          <div>
-            <button 
-              className="btn btn-outline-primary btn-sm fw-semibold d-flex align-items-center gap-1"
-              onClick={fetchDashboardData}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span>
-                  <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> 
-                  Đang tải...
-                </span>
-              ) : (
-                <>
-                  <i className="bi bi-arrow-clockwise"></i>
-                  <span>Cập nhật dữ liệu</span>
-                </>
-              )}
-            </button>
-          </div>
+          <button 
+            className="btn btn-outline-primary btn-sm fw-semibold d-flex align-items-center justify-content-center gap-1 align-self-start align-self-sm-auto"
+            onClick={fetchDashboardData}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <span>
+                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> 
+                Đang tải...
+              </span>
+            ) : (
+              <>
+                <i className="bi bi-arrow-clockwise"></i>
+                <span>Cập nhật dữ liệu</span>
+              </>
+            )}
+          </button>
         </div>
 
-        {/* THỐNG KÊ TỔNG QUAN */}
-        <div className="row g-3 mb-4">
-          <div className="col-md-3">
+        {/* THỐNG KÊ TỔNG QUAN (2 cột di động, 4 cột màn hình lớn) */}
+        <div className="row g-2 g-md-3 mb-4">
+          <div className="col-6 col-xl-3">
             <div className="card border-0 shadow-sm bg-primary text-white p-3 h-100">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <small className="text-white-50 fw-semibold text-uppercase">Doanh Thu Tháng Này</small>
-                  <h3 className="fw-bold m-0 mt-2">{formatMoney(summary.totalRevenue)}</h3>
+                  <small className="text-white-50 fw-semibold text-uppercase d-block" style={{ fontSize: '0.75rem' }}>
+                    Doanh Thu Tháng
+                  </small>
+                  <h4 className="fw-bold m-0 mt-2 fs-5 fs-md-4">{formatMoney(summary.totalRevenue)}</h4>
                 </div>
-                <div className="fs-1 opacity-50">💵</div>
+                <div className="fs-2 fs-md-1 opacity-50 d-none d-sm-block">💵</div>
               </div>
             </div>
           </div>
 
-          <div className="col-md-3">
+          <div className="col-6 col-xl-3">
             <div className="card border-0 shadow-sm bg-success text-white p-3 h-100">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <small className="text-white-50 fw-semibold text-uppercase">Phòng Đang Ở</small>
-                  <h3 className="fw-bold m-0 mt-2">{summary.rentedRooms} <small className="fs-6 fw-normal">phòng</small></h3>
+                  <small className="text-white-50 fw-semibold text-uppercase d-block" style={{ fontSize: '0.75rem' }}>
+                    Phòng Đang Ở
+                  </small>
+                  <h4 className="fw-bold m-0 mt-2 fs-5 fs-md-4">
+                    {summary.rentedRooms} <small className="fs-6 fw-normal">phòng</small>
+                  </h4>
                 </div>
-                <div className="fs-1 opacity-50">🔑</div>
+                <div className="fs-2 fs-md-1 opacity-50 d-none d-sm-block">🔑</div>
               </div>
             </div>
           </div>
 
-          <div className="col-md-3">
+          <div className="col-6 col-xl-3">
             <div className="card border-0 shadow-sm bg-warning text-dark p-3 h-100">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <small className="text-dark-50 fw-semibold text-uppercase">Phòng Trống</small>
-                  <h3 className="fw-bold m-0 mt-2">{summary.emptyRooms} <small className="fs-6 fw-normal">phòng</small></h3>
+                  <small className="text-dark-50 fw-semibold text-uppercase d-block" style={{ fontSize: '0.75rem' }}>
+                    Phòng Trống
+                  </small>
+                  <h4 className="fw-bold m-0 mt-2 fs-5 fs-md-4">
+                    {summary.emptyRooms} <small className="fs-6 fw-normal">phòng</small>
+                  </h4>
                 </div>
-                <div className="fs-1 opacity-50">🚪</div>
+                <div className="fs-2 fs-md-1 opacity-50 d-none d-sm-block">🚪</div>
               </div>
             </div>
           </div>
 
-          <div className="col-md-3">
+          <div className="col-6 col-xl-3">
             <div className="card border-0 shadow-sm bg-info text-white p-3 h-100">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <small className="text-white-50 fw-semibold text-uppercase">Tổng Số Phòng</small>
-                  <h3 className="fw-bold m-0 mt-2">{summary.totalRooms} <small className="fs-6 fw-normal">phòng</small></h3>
+                  <small className="text-white-50 fw-semibold text-uppercase d-block" style={{ fontSize: '0.75rem' }}>
+                    Tổng Số Phòng
+                  </small>
+                  <h4 className="fw-bold m-0 mt-2 fs-5 fs-md-4">
+                    {summary.totalRooms} <small className="fs-6 fw-normal">phòng</small>
+                  </h4>
                 </div>
-                <div className="fs-1 opacity-50">🏢</div>
+                <div className="fs-2 fs-md-1 opacity-50 d-none d-sm-block">🏢</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* TỶ LỆ LẤP ĐẦY PHÒNG */}
-        <div className="card border-0 shadow-sm p-4 mb-4">
+        <div className="card border-0 shadow-sm p-3 p-md-4 mb-4">
           <h6 className="fw-bold mb-3 text-primary">📊 Tỷ Lệ Lấp Đầy Phòng</h6>
           {summary.totalRooms > 0 ? (
             <div>
-              <div className="progress mb-2" style={{ height: '25px' }}>
+              <div className="progress mb-2" style={{ height: '22px' }}>
                 <div 
                   className="progress-bar bg-success fw-bold" 
                   role="progressbar" 
@@ -189,7 +210,7 @@ export default function LandlordDashboard() {
                   {fillPercentage}%
                 </div>
               </div>
-              <div className="d-flex justify-content-between text-muted small fw-semibold">
+              <div className="d-flex flex-column flex-sm-row justify-content-between text-muted small fw-semibold gap-1">
                 <span>Đã cho thuê: {summary.rentedRooms} / {summary.totalRooms} phòng</span>
                 <span>Còn trống: {summary.emptyRooms} phòng</span>
               </div>
@@ -200,7 +221,7 @@ export default function LandlordDashboard() {
         </div>
 
         {/* BẢNG THÔNG BÁO MỚI NHẤT */}
-        <div className="card border-0 shadow-sm p-4">
+        <div className="card border-0 shadow-sm p-3 p-md-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h6 className="fw-bold m-0 text-primary d-flex align-items-center gap-2">
               <i className="bi bi-bell-fill text-warning"></i>
@@ -225,20 +246,20 @@ export default function LandlordDashboard() {
               {notifications.slice(0, 5).map((notif, index) => (
                 <div 
                   key={notif.id || index} 
-                  className={`list-group-item list-group-item-action border-0 rounded-2 mb-2 p-3 ${
+                  className={`list-group-item list-group-item-action border-0 rounded-2 mb-2 p-2 p-md-3 ${
                     notif.isRead ? 'bg-light' : 'bg-white border-start border-4 border-primary shadow-sm'
                   }`}
                 >
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div className="me-2">
-                      <h6 className="fw-bold mb-1 text-dark" style={{ fontSize: '0.95rem' }}>
+                  <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-start gap-1">
+                    <div>
+                      <h6 className="fw-bold mb-1 text-dark" style={{ fontSize: '0.9rem' }}>
                         {notif.title || notif.subject || 'Thông báo hệ thống'}
                       </h6>
                       <p className="text-muted small mb-0">
                         {notif.message || notif.content || 'Không có nội dung mô tả.'}
                       </p>
                     </div>
-                    <small className="text-muted text-nowrap ms-2" style={{ fontSize: '0.75rem' }}>
+                    <small className="text-muted text-nowrap align-self-end align-self-sm-start" style={{ fontSize: '0.75rem' }}>
                       {notif.createdAt ? new Date(notif.createdAt).toLocaleDateString('vi-VN') : 'Gần đây'}
                     </small>
                   </div>

@@ -5,9 +5,11 @@ import axiosClient from '../../api/axiosClient';
 export default function ManagerDashboard() {
   const [summary, setSummary] = useState({
     totalRevenue: 0,
+    totalMotels: 0,
     totalRooms: 0,
     rentedRooms: 0,
-    emptyRooms: 0
+    emptyRooms: 0,
+    totalUsers: 0
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -18,24 +20,25 @@ export default function ManagerDashboard() {
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      const userId = localStorage.getItem('userId') || '1';
       const currentDate = new Date();
       const month = currentDate.getMonth() + 1;
       const year = currentDate.getFullYear();
 
-      // Sử dụng Promise.allSettled để tránh 1 API lỗi làm sập toàn bộ Dashboard
-      const [resDashboard, resMotels] = await Promise.allSettled([
-        axiosClient.get(`/dashboard?userId=${userId}`).catch(() => axiosClient.get('/dashboard/summary')),
-        axiosClient.get(`/motels?userId=${userId}`)
+      // Gọi API lấy dữ liệu toàn hệ thống dành cho Quản lý
+      const [resDashboard, resMotels, resUsers] = await Promise.allSettled([
+        axiosClient.get('/admin/dashboard/summary'),
+        axiosClient.get('/admin/motels'),
+        axiosClient.get('/admin/users/count')
       ]);
 
       const dashboardData = resDashboard.status === 'fulfilled' ? resDashboard.value.data || {} : {};
       const motels = resMotels.status === 'fulfilled' ? resMotels.value.data || [] : [];
+      const usersData = resUsers.status === 'fulfilled' ? resUsers.value.data || {} : {};
 
-      let currentMonthRevenue = 0;
+      let systemCurrentMonthRevenue = 0;
 
       if (motels.length > 0) {
-        // Lấy hóa đơn tháng này của tất cả các dãy trọ
+        // Lấy hóa đơn tháng này của tất cả dãy trọ
         const invoicePromises = motels.map(m =>
           axiosClient.get(`/invoices?motelId=${m.id}&month=${month}&year=${year}`).catch(() => ({ data: [] }))
         );
@@ -46,19 +49,20 @@ export default function ManagerDashboard() {
             const invoices = res.value.data || [];
             invoices.forEach(inv => {
               if (inv.status === 'PAID') {
-                currentMonthRevenue += Number(inv.total || inv.totalAmount || 0);
+                systemCurrentMonthRevenue += Number(inv.total || inv.totalAmount || 0);
               }
             });
           }
         });
       }
 
-      // Cập nhật state
       setSummary({
-        totalRevenue: currentMonthRevenue,
+        totalRevenue: systemCurrentMonthRevenue,
+        totalMotels: motels.length,
         totalRooms: dashboardData.totalRooms || 0,
         rentedRooms: dashboardData.rentedRooms || 0,
-        emptyRooms: dashboardData.emptyRooms || 0
+        emptyRooms: dashboardData.emptyRooms || 0,
+        totalUsers: usersData.totalUsers || 0
       });
 
     } catch (err) {
@@ -81,13 +85,13 @@ export default function ManagerDashboard() {
       {/* Sidebar cố định bên trái */}
       <Sidebar />
 
-      {/* Nội dung chính thụt lề 260px khớp với Sidebar */}
+      {/* Nội dung chính */}
       <div className="flex-grow-1 p-4 bg-light min-vh-100" style={{ marginLeft: '260px' }}>
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h3 className="fw-bold mb-1">🏠 Trang Chủ Quản Lý</h3>
+            <h3 className="fw-bold mb-1">🏠 Giao Diện Quản Lý (Manager)</h3>
             <p className="text-muted small m-0">
-              Tổng quan tình hình kinh doanh tháng {new Date().getMonth() + 1}/{new Date().getFullYear()}
+              Tổng quan tình hình kinh doanh toàn hệ thống tháng {new Date().getMonth() + 1}/{new Date().getFullYear()}
             </p>
           </div>
           <button 
@@ -148,8 +152,8 @@ export default function ManagerDashboard() {
             <div className="card border-0 shadow-sm bg-info text-white p-3 h-100">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <small className="text-white-50 fw-semibold text-uppercase">Tổng Số Phòng</small>
-                  <h3 className="fw-bold m-0 mt-2">{summary.totalRooms} <small className="fs-6 fw-normal">phòng</small></h3>
+                  <small className="text-white-50 fw-semibold text-uppercase">Tổng Dãy Trọ / Phòng</small>
+                  <h3 className="fw-bold m-0 mt-2">{summary.totalMotels} <small className="fs-6 fw-normal">dãy</small> / {summary.totalRooms} <small className="fs-6 fw-normal">phòng</small></h3>
                 </div>
                 <div className="fs-1 opacity-50">🏢</div>
               </div>
@@ -157,7 +161,7 @@ export default function ManagerDashboard() {
           </div>
         </div>
 
-        {/* TỶ LỆ LẤP ĐẦY PHÒNG (Đã mở rộng toàn màn hình thay cho khối Thao tác nhanh) */}
+        {/* TỶ LỆ LẤP ĐẦY PHÒNG */}
         <div className="card border-0 shadow-sm p-4">
           <h6 className="fw-bold mb-3 text-primary">📊 Tỷ Lệ Lấp Đầy Phòng</h6>
           {summary.totalRooms > 0 ? (
