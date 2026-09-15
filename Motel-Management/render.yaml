@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: my-java-backend # Tên dịch vụ hiển thị trên Render (bạn có thể đổi tên này)
+    env: docker
+    plan: free
+    region: singapore # Chọn khu vực gần Việt Nam nhất (singapore, oregon, frankfurt, ohio)
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: JAVA_TOOL_OPTIONS
+        value: "-Xmx384m" # Giới hạn RAM của Java để ứng dụng không bị tràn bộ nhớ 512MB của Render
