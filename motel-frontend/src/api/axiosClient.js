@@ -1,21 +1,19 @@
 import axios from "axios";
 
-// Ưu tiên lấy từ biến môi trường (Vite/React), nếu không có mới dùng URL mặc định của Railway
-const BASE_URL =
-  import.meta.env?.VITE_API_BASE_URL || "http://localhost:8080/api";
+// Đảm bảo loại bỏ dấu slash / ở cuối nếu lỡ nhập thừa trên Vercel
+const rawBaseUrl =
+  import.meta.env?.VITE_API_BASE_URL ||
+  "https://motel-management-app.onrender.com/api";
+const BASE_URL = rawBaseUrl.endsWith("/")
+  ? rawBaseUrl.slice(0, -1)
+  : rawBaseUrl;
 
 const axiosClient = axios.create({
   baseURL: BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
-
-export const uploadImageApi = async (file) => {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  // Gọi endpoint /api/upload/image của Spring Boot
-  const response = await axiosClient.post("/upload/image", formData);
-  return response.data;
-};
 
 // Interceptor cho Request
 axiosClient.interceptors.request.use(
@@ -23,7 +21,7 @@ axiosClient.interceptors.request.use(
     const token =
       localStorage.getItem("token") || localStorage.getItem("accessToken");
 
-    // Nếu gửi FormData (File upload), XÓA Content-Type thủ công để Trình duyệt tự tạo boundary
+    // Nếu gửi FormData, để browser tự thêm boundary
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     }
@@ -37,9 +35,16 @@ axiosClient.interceptors.request.use(
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
+
+export const uploadImageApi = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  // Vì baseURL đã có /api, ở đây chỉ cần gọi /upload/image
+  const response = await axiosClient.post("/upload/image", formData);
+  return response.data;
+};
 
 export default axiosClient;
