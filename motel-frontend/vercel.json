@@ -5,10 +5,6 @@
       "destination": "https://motel-management-app.onrender.com/api/:path*"
     },
     {
-      "source": "/auth/:path*",
-      "destination": "https://motel-management-app.onrender.com/auth/:path*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
