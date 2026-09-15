@@ -2,9 +2,7 @@ import axios from "axios";
 
 // Ưu tiên lấy từ biến môi trường (Vite/React), nếu không có mới dùng URL mặc định của Railway
 const BASE_URL =
-  import.meta.env?.VITE_API_BASE_URL ||
-  process.env?.REACT_APP_API_URL ||
-  "https://motel-management-app-production.up.railway.app/api";
+  import.meta.env?.VITE_API_BASE_URL || "http://localhost:8080/api";
 
 const axiosClient = axios.create({
   baseURL: BASE_URL,

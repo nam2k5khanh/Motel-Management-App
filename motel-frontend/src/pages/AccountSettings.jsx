@@ -33,7 +33,7 @@ export default function AccountSettings() {
 
   useEffect(() => {
     // 1. Lấy userId từ localStorage khi component render
-    const storedUserId = localStorage.getItem('userId') || JSON.parse(localStorage.getItem('user'))?.id;
+    const storedUserId = localStorage.getItem('userId') || JSON.parse(localStorage.getItem('user') || '{}')?.id;
 
     if (storedUserId) {
       setUserId(storedUserId);
@@ -98,7 +98,6 @@ export default function AccountSettings() {
 
     setMsgPass({ type: '', text: '' });
 
-    // Kiểm tra khớp mật khẩu mới
     if (passwords.newPassword !== passwords.confirmPassword) {
       setMsgPass({ type: 'danger', text: 'Mật khẩu xác nhận không trùng khớp!' });
       return;
@@ -111,14 +110,12 @@ export default function AccountSettings() {
 
     setSavingPass(true);
     try {
-      // Gọi API PUT /users/{id}/change-password
       await axiosClient.put(`/users/${userId}/change-password`, {
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword
       });
 
       setMsgPass({ type: 'success', text: 'Đổi mật khẩu thành công!' });
-      // Reset form mật khẩu
       setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err) {
       console.error('Lỗi đổi mật khẩu:', err);
@@ -132,197 +129,231 @@ export default function AccountSettings() {
   };
 
   return (
-    <div className="d-flex">
-      <Sidebar />
+    <div className="d-flex flex-column min-vh-100 bg-light">
+      {/* Header Mobile - Hiển thị trên màn hình nhỏ < 992px */}
+      <header className="navbar navbar-dark bg-primary sticky-top px-3 shadow-sm d-lg-none" style={{ zIndex: 1030, height: '56px' }}>
+        <div className="d-flex align-items-center w-100 justify-content-between">
+          <div className="d-flex align-items-center gap-2">
+            <button className="btn btn-link text-white p-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
+              <i className="bi bi-list fs-3"></i>
+            </button>
+            <span className="navbar-brand fw-bold mb-0 me-0 fs-5">TÀI KHOẢN</span>
+          </div>
+          <div className="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }}>
+            U
+          </div>
+        </div>
+      </header>
 
-      <div className="flex-grow-1 p-4 bg-light min-vh-100" style={{ marginLeft: '260px' }}>
-        <h3 className="fw-bold mb-4">⚙️ Cài Đặt Tài Khoản</h3>
+      {/* Style Responsive cho phần Sidebar & Nội dung */}
+      <style>{`
+        .main-content-area {
+          margin-left: 0 !important;
+          width: 100% !important;
+        }
+        @media (min-width: 992px) {
+          .main-content-area {
+            margin-left: 260px !important;
+            width: calc(100% - 260px) !important;
+          }
+        }
+      `}</style>
 
-        <div className="row g-4">
-          {/* ================= FORM THÔNG TIN CÁ NHÂN ================= */}
-          <div className="col-lg-7">
-            <div className="card border-0 shadow-sm">
-              <div className="card-header bg-white py-3">
-                <h5 className="fw-bold m-0 text-primary">
-                  <i className="bi bi-person-badge-fill me-2"></i>Thông Tin Cá Nhân
-                </h5>
-              </div>
-              <div className="card-body">
-                {msgProfile.text && (
-                  <div className={`alert alert-${msgProfile.type} py-2 mb-3`}>
-                    {msgProfile.text}
-                  </div>
-                )}
+      {/* Main Container Layout */}
+      <div className="d-flex flex-grow-1">
+        {/* Sidebar Component */}
+        <Sidebar />
 
-                {isLoading ? (
-                  <div className="text-center py-4">
-                    <div className="spinner-border text-primary" role="status"></div>
-                    <p className="mt-2 text-muted">Đang tải thông tin...</p>
-                  </div>
-                ) : (
-                  <form onSubmit={handleUpdateProfile} className="row g-3">
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">Tên Đăng Nhập</label>
-                      <input
-                        type="text"
-                        className="form-control bg-light"
-                        value={profile.username}
-                        disabled
-                      />
+        {/* Nội dung chính */}
+        <div className="main-content-area flex-grow-1 p-3 p-md-4">
+
+          <div className="row g-4">
+            {/* ================= FORM THÔNG TIN CÁ NHÂN ================= */}
+            <div className="col-12 col-lg-7">
+              <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div className="card-header bg-white py-3 border-0">
+                  <h5 className="fw-bold m-0 text-primary fs-6 fs-md-5">
+                    <i className="bi bi-person-badge-fill me-2"></i>Thông Tin Cá Nhân
+                  </h5>
+                </div>
+                <div className="card-body p-3 p-md-4 pt-0">
+                  {msgProfile.text && (
+                    <div className={`alert alert-${msgProfile.type} alert-dismissible fade show py-2 mb-3`} role="alert">
+                      {msgProfile.text}
+                      <button type="button" className="btn-close" onClick={() => setMsgProfile({ type: '', text: '' })}></button>
                     </div>
+                  )}
 
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">Họ và Tên (*)</label>
+                  {isLoading ? (
+                    <div className="text-center py-4">
+                      <div className="spinner-border text-primary" role="status"></div>
+                      <p className="mt-2 text-muted small">Đang tải thông tin...</p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleUpdateProfile} className="row g-3">
+                      <div className="col-12 col-md-6">
+                        <label className="form-label fw-semibold small">Tên Đăng Nhập</label>
+                        <input
+                          type="text"
+                          className="form-control bg-light"
+                          value={profile.username}
+                          disabled
+                        />
+                      </div>
+
+                      <div className="col-12 col-md-6">
+                        <label className="form-label fw-semibold small">Họ và Tên (*)</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          required
+                          value={profile.fullName}
+                          onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="col-12 col-md-6">
+                        <label className="form-label fw-semibold small">Số Điện Thoại</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={profile.phone}
+                          onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="col-12 col-md-6">
+                        <label className="form-label fw-semibold small">Email</label>
+                        <input
+                          type="email"
+                          className="form-control"
+                          value={profile.email}
+                          onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="col-12 col-md-6">
+                        <label className="form-label fw-semibold small">Số CCCD/CMND</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={profile.cccd}
+                          onChange={(e) => setProfile({ ...profile, cccd: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="col-12 col-md-6">
+                        <label className="form-label fw-semibold small">Giới Tính</label>
+                        <select
+                          className="form-select"
+                          value={profile.gender}
+                          onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
+                        >
+                          <option value="NAM">Nam</option>
+                          <option value="NU">Nữ</option>
+                          <option value="KHAC">Khác</option>
+                        </select>
+                      </div>
+
+                      <div className="col-12">
+                        <label className="form-label fw-semibold small">Liên Hệ Khẩn Cấp</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={profile.emergencyContact}
+                          onChange={(e) => setProfile({ ...profile, emergencyContact: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="col-12">
+                        <label className="form-label fw-semibold small">Địa Chỉ</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={profile.address}
+                          onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="col-12 text-end mt-4">
+                        <button
+                          type="submit"
+                          className="btn btn-primary fw-bold px-4 w-100 w-sm-auto rounded-pill"
+                          disabled={savingProfile || !userId}
+                        >
+                          {savingProfile ? 'Đang lưu...' : '💾 Lưu Thay Đổi'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ================= FORM ĐỔI MẬT KHẨU ================= */}
+            <div className="col-12 col-lg-5">
+              <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div className="card-header bg-white py-3 border-0">
+                  <h5 className="fw-bold m-0 text-danger fs-6 fs-md-5">
+                    <i className="bi bi-shield-lock-fill me-2"></i>Đổi Mật Khẩu
+                  </h5>
+                </div>
+                <div className="card-body p-3 p-md-4 pt-0">
+                  {msgPass.text && (
+                    <div className={`alert alert-${msgPass.type} alert-dismissible fade show py-2 mb-3`} role="alert">
+                      {msgPass.text}
+                      <button type="button" className="btn-close" onClick={() => setMsgPass({ type: '', text: '' })}></button>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleChangePassword} className="row g-3">
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">Mật Khẩu Hiện Tại</label>
                       <input
-                        type="text"
+                        type="password"
                         className="form-control"
                         required
-                        value={profile.fullName}
-                        onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                        value={passwords.currentPassword}
+                        onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
                       />
                     </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">Số Điện Thoại</label>
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">Mật Khẩu Mới</label>
                       <input
-                        type="text"
+                        type="password"
                         className="form-control"
-                        value={profile.phone}
-                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                        required
+                        value={passwords.newPassword}
+                        onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
                       />
                     </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">Email</label>
+                    <div className="col-12">
+                      <label className="form-label fw-semibold small">Xác Nhận Mật Khẩu Mới</label>
                       <input
-                        type="email"
+                        type="password"
                         className="form-control"
-                        value={profile.email}
-                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">Số CCCD/CMND</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={profile.cccd}
-                        onChange={(e) => setProfile({ ...profile, cccd: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">Giới Tính</label>
-                      <select
-                        className="form-select"
-                        value={profile.gender}
-                        onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
-                      >
-                        <option value="NAM">Nam</option>
-                        <option value="NU">Nữ</option>
-                        <option value="KHAC">Khác</option>
-                      </select>
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">Liên Hệ Khẩn Cấp</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={profile.emergencyContact}
-                        onChange={(e) => setProfile({ ...profile, emergencyContact: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="col-md-12">
-                      <label className="form-label fw-semibold">Địa Chỉ</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={profile.address}
-                        onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                        required
+                        value={passwords.confirmPassword}
+                        onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
                       />
                     </div>
 
                     <div className="col-12 text-end mt-4">
                       <button
                         type="submit"
-                        className="btn btn-primary fw-bold px-4"
-                        disabled={savingProfile || !userId}
+                        className="btn btn-danger fw-bold px-4 w-100 w-sm-auto rounded-pill"
+                        disabled={savingPass || !userId}
                       >
-                        {savingProfile ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                        {savingPass ? 'Đang cập nhật...' : '🔒 Đổi Mật Khẩu'}
                       </button>
                     </div>
                   </form>
-                )}
+                </div>
               </div>
             </div>
           </div>
-
-          {/* ================= FORM ĐỔI MẬT KHẨU ================= */}
-          <div className="col-lg-5">
-            <div className="card border-0 shadow-sm">
-              <div className="card-header bg-white py-3">
-                <h5 className="fw-bold m-0 text-danger">
-                  <i className="bi bi-shield-lock-fill me-2"></i>Đổi Mật Khẩu
-                </h5>
-              </div>
-              <div className="card-body">
-                {msgPass.text && (
-                  <div className={`alert alert-${msgPass.type} py-2 mb-3`}>
-                    {msgPass.text}
-                  </div>
-                )}
-
-                <form onSubmit={handleChangePassword} className="row g-3">
-                  <div className="col-12">
-                    <label className="form-label fw-semibold">Mật Khẩu Hiện Tại</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      required
-                      value={passwords.currentPassword}
-                      onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="col-12">
-                    <label className="form-label fw-semibold">Mật Khẩu Mới</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      required
-                      value={passwords.newPassword}
-                      onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="col-12">
-                    <label className="form-label fw-semibold">Xác Nhận Mật Khẩu Mới</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      required
-                      value={passwords.confirmPassword}
-                      onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="col-12 text-end mt-4">
-                    <button
-                      type="submit"
-                      className="btn btn-danger fw-bold px-4"
-                      disabled={savingPass || !userId}
-                    >
-                      {savingPass ? 'Đang cập nhật...' : 'Đổi Mật Khẩu'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
     </div>

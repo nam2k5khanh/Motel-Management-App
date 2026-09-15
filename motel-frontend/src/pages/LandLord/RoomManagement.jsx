@@ -148,20 +148,39 @@ export default function RoomManagement() {
   });
 
   return (
-    <div className="d-flex">
-      {/* Sidebar cố định bên trái */}
+    <div className="d-flex flex-column flex-lg-row min-vh-100 bg-light overflow-hidden" style={{ marginTop: '50px' }}>
+      {/* Dynamic CSS khắc phục Responsive & Tràn Dropdown trên Mobile */}
+      <style>{`
+        .main-content-area {
+          margin-left: 0 !important;
+          width: 100% !important;
+          max-width: 100vw;
+          overflow-x: hidden;
+        }
+        @media (min-width: 992px) {
+          .main-content-area {
+            margin-left: 260px !important;
+            width: calc(100% - 260px) !important;
+          }
+        }
+        select.form-select {
+          max-width: 100% !important;
+          text-overflow: ellipsis;
+        }
+      `}</style>
+
+      {/* Sidebar Navigation */}
       <Sidebar />
 
-      {/* Nội dung chính thụt lề 260px khớp với Sidebar */}
-      <div className="flex-grow-1 p-4 bg-light min-vh-100" style={{ marginLeft: '260px' }}>
-        <h3 className="fw-bold mb-4">🚪 Quản Lý Phòng Trọ</h3>
+      {/* Main Content Area */}
+      <div className="main-content-area flex-grow-1 p-3 p-md-4">
 
         {/* Dropdown Chọn Dãy Trọ */}
         <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body d-flex align-items-center">
-            <label className="fw-bold me-3 text-nowrap fs-6">Chọn Dãy Trọ:</label>
+          <div className="card-body d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+            <label className="fw-bold text-nowrap fs-6 mb-1 mb-sm-0">Chọn Dãy Trọ:</label>
             <select 
-              className="form-select form-select-lg fw-semibold text-primary" 
+              className="form-select fw-semibold text-primary w-100 text-truncate" 
               value={selectedMotelId} 
               onChange={handleMotelChange}
             >
@@ -178,9 +197,9 @@ export default function RoomManagement() {
 
         {/* Form Thêm/Sửa Phòng */}
         <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body">
+          <div className="card-body p-3 p-md-4">
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="fw-bold m-0 text-primary">
+              <h5 className="fw-bold m-0 text-primary fs-6 fs-md-5">
                 {editingRoomId ? '📝 Cập Nhật Phòng' : '➕ Thêm Phòng Mới'}
               </h5>
               {editingRoomId && (
@@ -191,15 +210,15 @@ export default function RoomManagement() {
             </div>
 
             {errorMessage && (
-              <div className="alert alert-danger py-2 mb-3" role="alert">
+              <div className="alert alert-danger py-2 mb-3 small" role="alert">
                 <i className="bi bi-exclamation-triangle-fill me-2"></i>
                 {errorMessage}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="row g-3">
-              <div className="col-md-3">
-                <label className="form-label fw-semibold">Mã / Số Phòng (*)</label>
+              <div className="col-12 col-sm-6 col-md-3">
+                <label className="form-label fw-semibold small">Mã / Số Phòng (*)</label>
                 <input 
                   type="text" 
                   className="form-control" 
@@ -210,8 +229,8 @@ export default function RoomManagement() {
                 />
               </div>
 
-              <div className="col-md-3">
-                <label className="form-label fw-semibold">Giá Thuê (VNĐ) (*)</label>
+              <div className="col-12 col-sm-6 col-md-3">
+                <label className="form-label fw-semibold small">Giá Thuê (VNĐ) (*)</label>
                 <input 
                   type="number" 
                   className="form-control" 
@@ -222,8 +241,8 @@ export default function RoomManagement() {
                 />
               </div>
 
-              <div className="col-md-2">
-                <label className="form-label fw-semibold">Diện Tích (m²)</label>
+              <div className="col-6 col-sm-4 col-md-2">
+                <label className="form-label fw-semibold small">Diện Tích (m²)</label>
                 <input 
                   type="number" 
                   step="0.1"
@@ -234,8 +253,8 @@ export default function RoomManagement() {
                 />
               </div>
 
-              <div className="col-md-2">
-                <label className="form-label fw-semibold">Tối Đa (Người)</label>
+              <div className="col-6 col-sm-4 col-md-2">
+                <label className="form-label fw-semibold small">Tối Đa (Người)</label>
                 <input 
                   type="number" 
                   className="form-control" 
@@ -244,8 +263,8 @@ export default function RoomManagement() {
                 />
               </div>
 
-              <div className="col-md-2">
-                <label className="form-label fw-semibold">Trạng Thái</label>
+              <div className="col-12 col-sm-4 col-md-2">
+                <label className="form-label fw-semibold small">Trạng Thái</label>
                 <select 
                   className="form-select"
                   value={formData.status}
@@ -258,7 +277,7 @@ export default function RoomManagement() {
               </div>
 
               <div className="col-12">
-                <label className="form-label fw-semibold">Mô Tả / Ghi Chú</label>
+                <label className="form-label fw-semibold small">Mô Tả / Ghi Chú</label>
                 <input 
                   type="text" 
                   className="form-control" 
@@ -276,7 +295,7 @@ export default function RoomManagement() {
                 )}
                 <button 
                   type="submit" 
-                  className={`btn ${editingRoomId ? 'btn-warning' : 'btn-primary'} fw-bold px-4`}
+                  className={`btn ${editingRoomId ? 'btn-warning' : 'btn-primary'} fw-bold px-4 w-100 w-sm-auto`}
                   disabled={isLoading || !selectedMotelId}
                 >
                   {isLoading ? (
@@ -296,12 +315,12 @@ export default function RoomManagement() {
           </div>
         </div>
 
-        {/* Danh Sách Phòng Trọ */}
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="fw-bold m-0">Danh Sách Phòng ({filteredRooms.length}/{rooms.length})</h5>
+        {/* Danh Sách Phòng Trọ Header + Filter */}
+        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
+          <h5 className="fw-bold m-0 fs-6 fs-md-5">Danh Sách Phòng ({filteredRooms.length}/{rooms.length})</h5>
           
           {/* Lọc phòng theo trạng thái */}
-          <div className="btn-group btn-group-sm" role="group">
+          <div className="btn-group btn-group-sm w-100 w-sm-auto" role="group">
             <button 
               type="button" 
               className={`btn ${filterStatus === 'ALL' ? 'btn-primary' : 'btn-outline-primary'}`}
@@ -333,6 +352,7 @@ export default function RoomManagement() {
           </div>
         </div>
 
+        {/* Danh sách thẻ Room Grid */}
         {isFetching ? (
           <div className="text-center py-5">
             <div className="spinner-border text-primary" role="status">
@@ -346,12 +366,12 @@ export default function RoomManagement() {
         ) : (
           <div className="row g-3">
             {filteredRooms.map(room => (
-              <div className="col-md-4 col-lg-3" key={room.id}>
+              <div className="col-12 col-sm-6 col-md-4 col-lg-3" key={room.id}>
                 <div className={`card h-100 border-0 shadow-sm ${editingRoomId === room.id ? 'border border-warning border-2' : ''}`}>
-                  <div className="card-body d-flex flex-column justify-content-between">
+                  <div className="card-body d-flex flex-column justify-content-between p-3">
                     <div>
                       <div className="d-flex justify-content-between align-items-center mb-2">
-                        <h5 className="card-title fw-bold m-0 text-primary">{room.roomCode}</h5>
+                        <h5 className="card-title fw-bold m-0 text-primary fs-6">{room.roomCode}</h5>
                         {renderStatusBadge(room.status)}
                       </div>
                       <p className="card-text text-danger fw-bold fs-5 mb-1">

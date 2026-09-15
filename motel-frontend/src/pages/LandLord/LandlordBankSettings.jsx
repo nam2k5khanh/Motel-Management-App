@@ -33,7 +33,7 @@ export default function LandlordBankSettings() {
     if (!landlordId) return;
     setLoading(true);
     axiosClient
-      .get(`/landlord-bank/landlord/${landlordId}`) // Khớp đúng với GET @RequestMapping("/api/landlord-bank/landlord/{landlordId}")
+      .get(`/landlord-bank/landlord/${landlordId}`)
       .then((res) => {
         if (res.data) {
           setBankData({
@@ -84,7 +84,6 @@ export default function LandlordBankSettings() {
     setMessage({ type: '', text: '' });
 
     try {
-      // Khớp đúng với PUT @RequestMapping("/api/landlord-bank/landlord/{landlordId}")
       await axiosClient.put(`/landlord-bank/landlord/${landlordId}`, bankData);
       setMessage({ type: 'success', text: 'Lưu thông tin tài khoản ngân hàng thành công!' });
     } catch (err) {
@@ -104,99 +103,132 @@ export default function LandlordBankSettings() {
   };
 
   return (
-    <div className="d-flex">
-      <LandlordSidebar />
-
-      <div className="flex-grow-1 p-4 bg-light min-vh-100" style={{ marginLeft: '260px' }}>
-        <h3 className="fw-bold mb-4 text-dark">🏦 Cấu Hình Tài Khoản Ngân Hàng</h3>
-
-        {message.text && (
-          <div className={`alert alert-${message.type} alert-dismissible fade show`} role="alert">
-            {message.text}
-            <button type="button" className="btn-close" onClick={() => setMessage({ type: '', text: '' })}></button>
+    <div className="d-flex flex-column min-vh-100 bg-light">
+      {/* Header Mobile - Hiển thị trên màn hình nhỏ < 992px */}
+      <header className="navbar navbar-dark bg-primary sticky-top px-3 shadow-sm d-lg-none" style={{ zIndex: 1030, height: '56px' }}>
+        <div className="d-flex align-items-center w-100 justify-content-between">
+          <div className="d-flex align-items-center gap-2">
+            <button className="btn btn-link text-white p-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
+              <i className="bi bi-list fs-3"></i>
+            </button>
+            <span className="navbar-brand fw-bold mb-0 me-0 fs-5">CHỦ TRỌ</span>
           </div>
-        )}
+          <div className="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }}>
+            N
+          </div>
+        </div>
+      </header>
 
-        <div className="row g-4">
-          {/* CỘT FORM NHẬP THÔNG TIN */}
-          <div className="col-lg-7">
-            <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-              <h5 className="fw-bold text-primary mb-3">Thông Tin Ngân Hàng Nhận Tiền</h5>
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">Ngân hàng</label>
-                  <select
-                    name="bankCode"
-                    className="form-select"
-                    value={bankData.bankCode}
-                    onChange={handleBankSelectChange}
-                  >
-                    {VIETNAM_BANKS.map((b) => (
-                      <option key={b.code} value={b.code}>
-                        {b.name} ({b.code})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+      {/* Style Responsive cho phần Sidebar & Nội dung */}
+      <style>{`
+        .main-content-area {
+          margin-left: 0 !important;
+          width: 100% !important;
+        }
+        @media (min-width: 992px) {
+          .main-content-area {
+            margin-left: 260px !important;
+            width: calc(100% - 260px) !important;
+          }
+        }
+      `}</style>
 
-                <div className="mb-3">
-                  <label className="form-label fw-semibold">Số tài khoản</label>
-                  <input
-                    type="text"
-                    name="accountNumber"
-                    className="form-control"
-                    placeholder="VD: 0987654321"
-                    value={bankData.accountNumber}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+      {/* Main Container Layout */}
+      <div className="d-flex flex-grow-1">
+        {/* Sidebar Component */}
+        <LandlordSidebar />
 
-                <div className="mb-4">
-                  <label className="form-label fw-semibold">Tên chủ tài khoản (Viết hoa không dấu)</label>
-                  <input
-                    type="text"
-                    name="accountHolder"
-                    className="form-control text-uppercase"
-                    placeholder="VD: NGUYEN VAN A"
-                    value={bankData.accountHolder}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+        {/* Nội dung chính */}
+        <div className="main-content-area flex-grow-1 p-3 p-md-4">
 
-                <button type="submit" className="btn btn-primary px-4 rounded-pill fw-bold" disabled={loading}>
-                  {loading ? 'Đang lưu...' : '💾 Lưu cấu hình'}
-                </button>
-              </form>
+          {message.text && (
+            <div className={`alert alert-${message.type} alert-dismissible fade show`} role="alert">
+              {message.text}
+              <button type="button" className="btn-close" onClick={() => setMessage({ type: '', text: '' })}></button>
             </div>
-          </div>
+          )}
 
-          {/* CỘT PREVIEW MÃ QR DEMO */}
-          <div className="col-lg-5">
-            <div className="card border-0 shadow-sm rounded-4 p-4 bg-white text-center">
-              <h5 className="fw-bold text-secondary mb-3">Xem Trước Mã VietQR</h5>
-              {bankData.accountNumber && bankData.bankCode ? (
-                <div>
-                  <img
-                    src={previewQR()}
-                    alt="VietQR Demo"
-                    className="img-fluid rounded-3 border shadow-sm p-2 mb-3 bg-white"
-                    style={{ maxHeight: '250px' }}
-                  />
-                  <div className="small text-start bg-light p-3 rounded-3">
-                    <p className="mb-1"><strong>Ngân hàng:</strong> {bankData.bankName}</p>
-                    <p className="mb-1"><strong>Mã NH (VietQR):</strong> {bankData.bankCode}</p>
-                    <p className="mb-1"><strong>STK:</strong> {bankData.accountNumber}</p>
-                    <p className="mb-0"><strong>Chủ TK:</strong> {bankData.accountHolder}</p>
+          <div className="row g-4">
+            {/* CỘT FORM NHẬP THÔNG TIN */}
+            <div className="col-12 col-lg-7">
+              <div className="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white">
+                <h5 className="fw-bold text-primary mb-3 fs-6 fs-md-5">Thông Tin Ngân Hàng Nhận Tiền</h5>
+                <form onSubmit={handleSubmit}>
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">Ngân hàng</label>
+                    <select
+                      name="bankCode"
+                      className="form-select"
+                      value={bankData.bankCode}
+                      onChange={handleBankSelectChange}
+                    >
+                      {VIETNAM_BANKS.map((b) => (
+                        <option key={b.code} value={b.code}>
+                          {b.name} ({b.code})
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
-              ) : (
-                <div className="py-5 text-muted">
-                  <i className="bi bi-qr-code-scan display-4 d-block mb-2"></i>
-                  Vui lòng nhập đầy đủ Số tài khoản để xem trước mã QR.
-                </div>
-              )}
+
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold small">Số tài khoản</label>
+                    <input
+                      type="text"
+                      name="accountNumber"
+                      className="form-control"
+                      placeholder="VD: 0987654321"
+                      value={bankData.accountNumber}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="form-label fw-semibold small">Tên chủ tài khoản (Viết hoa không dấu)</label>
+                    <input
+                      type="text"
+                      name="accountHolder"
+                      className="form-control text-uppercase"
+                      placeholder="VD: NGUYEN VAN A"
+                      value={bankData.accountHolder}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <button type="submit" className="btn btn-primary w-100 w-sm-auto px-4 rounded-pill fw-bold" disabled={loading}>
+                    {loading ? 'Đang lưu...' : '💾 Lưu cấu hình'}
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* CỘT PREVIEW MÃ QR DEMO */}
+            <div className="col-12 col-lg-5">
+              <div className="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white text-center">
+                <h5 className="fw-bold text-secondary mb-3 fs-6 fs-md-5">Xem Trước Mã VietQR</h5>
+                {bankData.accountNumber && bankData.bankCode ? (
+                  <div>
+                    <img
+                      src={previewQR()}
+                      alt="VietQR Demo"
+                      className="img-fluid rounded-3 border shadow-sm p-2 mb-3 bg-white"
+                      style={{ maxHeight: '250px' }}
+                    />
+                    <div className="small text-start bg-light p-3 rounded-3">
+                      <p className="mb-1 text-break"><strong>Ngân hàng:</strong> {bankData.bankName}</p>
+                      <p className="mb-1"><strong>Mã NH (VietQR):</strong> {bankData.bankCode}</p>
+                      <p className="mb-1 text-break"><strong>STK:</strong> {bankData.accountNumber}</p>
+                      <p className="mb-0 text-break"><strong>Chủ TK:</strong> {bankData.accountHolder}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-4 py-md-5 text-muted">
+                    <i className="bi bi-qr-code-scan display-4 d-block mb-2"></i>
+                    Vui lòng nhập đầy đủ Số tài khoản để xem trước mã QR.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

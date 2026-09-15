@@ -88,6 +88,7 @@ export default function LandlordDashboard() {
         .dashboard-main-content {
           margin-left: 0 !important;
           width: 100%;
+          margin-top: 50px;
         }
         @media (min-width: 768px) {
           .dashboard-main-content {
@@ -106,7 +107,6 @@ export default function LandlordDashboard() {
         {/* HEADER: Tiêu đề + Nút Cập nhật */}
         <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
           <div>
-            <h3 className="fw-bold mb-1 fs-4 fs-md-3">🏠 Trang Chủ Quản Lý</h3>
             <p className="text-muted small m-0">
               Tổng quan tình hình kinh doanh tháng {new Date().getMonth() + 1}/{new Date().getFullYear()}
             </p>

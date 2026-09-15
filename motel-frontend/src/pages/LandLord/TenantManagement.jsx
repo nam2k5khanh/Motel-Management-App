@@ -23,6 +23,7 @@ export default function TenantManagement() {
     if (selectedMotelId) {
       fetchTenantsByMotel(selectedMotelId, selectedStatus);
     } else {
+      // Nếu không chọn dãy trọ cụ thể, gọi hàm tải an toàn
       fetchAllTenants();
     }
   }, [selectedMotelId, selectedStatus]);
@@ -37,10 +38,13 @@ export default function TenantManagement() {
       if (motelList.length > 0) {
         setSelectedMotelId(motelList[0].id.toString());
       } else {
+        setTenants([]);
         setIsFetching(false);
       }
     } catch (err) {
       console.error('Lỗi khi tải danh sách dãy trọ:', err);
+      setMotels([]);
+      setTenants([]);
       setIsFetching(false);
     }
   };
@@ -49,7 +53,6 @@ export default function TenantManagement() {
   const enrichTenantsWithUserData = async (motelTenantsList) => {
     if (!motelTenantsList || motelTenantsList.length === 0) return [];
 
-    // CẢI TIẾN: Bỏ qua những khách thuê có status REMOVED từ tầng API response nếu có
     const activeTenantsOnly = motelTenantsList.filter(item => item.status !== 'REMOVED');
 
     const enrichedList = await Promise.all(
@@ -107,16 +110,33 @@ export default function TenantManagement() {
     }
   };
 
-  // Tải tất cả khách thuê
+  // Tải tất cả khách thuê (Đã sửa lỗi 404 bằng cách gom dữ liệu từ tất cả các dãy trọ)
   const fetchAllTenants = async () => {
     setIsFetching(true);
     try {
-      const res = await axiosClient.get('/tenants');
-      const rawList = res.data || [];
-      const fullData = await enrichTenantsWithUserData(rawList);
+      if (!motels || motels.length === 0) {
+        setTenants([]);
+        return;
+      }
+      
+      // Duyệt qua từng dãy trọ để lấy khách thuê thay vì gọi GET /tenants bị 404
+      const statusParam = selectedStatus === 'ALL' ? '' : `?status=${selectedStatus}`;
+      const requests = motels.map(m => axiosClient.get(`/motel-tenants/motel/${m.id}${statusParam}`));
+      
+      const responses = await Promise.allSettled(requests);
+      let combinedTenants = [];
+      
+      responses.forEach(res => {
+        if (res.status === 'fulfilled' && Array.isArray(res.value.data)) {
+          combinedTenants = combinedTenants.concat(res.value.data);
+        }
+      });
+
+      const fullData = await enrichTenantsWithUserData(combinedTenants);
       setTenants(fullData);
     } catch (err) {
       console.error('Lỗi khi tải tất cả khách thuê:', err);
+      setTenants([]);
     } finally {
       setIsFetching(false);
     }
@@ -156,7 +176,7 @@ export default function TenantManagement() {
     }
   };
 
-  // 5. Xử lý Xóa Khách Thuê (Soft Delete - Cập nhật status = REMOVED)
+  // 5. Xử lý Xóa Khách Thuê (Soft Delete)
   const handleDeleteTenant = async (id, tenantName) => {
     if (!window.confirm(`Xác nhận GỠ khách thuê "${tenantName}" khỏi dãy trọ?\n(Hành động này sẽ ẩn khách khỏi danh sách nhưng giữ lại dữ liệu lịch sử đối soát)`)) return;
 
@@ -193,7 +213,7 @@ export default function TenantManagement() {
 
   // LỌC DANH SÁCH: Bỏ qua hoàn toàn các người dùng có status === 'REMOVED'
   const filteredTenants = tenants.filter(t => {
-    if (t.status === 'REMOVED') return false; // 👉 Bỏ qua nếu là REMOVED
+    if (t.status === 'REMOVED') return false;
 
     const user = t.userInfo || {};
     const name = (user.fullName || user.name || user.username || '').toLowerCase();
@@ -205,23 +225,40 @@ export default function TenantManagement() {
   });
 
   return (
-    <div className="d-flex">
+    <div className="d-flex flex-column flex-lg-row min-vh-100 bg-light overflow-hidden" style={{ marginTop: '50px' }}>
+      <style>{`
+        .main-content-area {
+          margin-left: 0 !important;
+          width: 100% !important;
+          max-width: 100vw;
+          overflow-x: hidden;
+        }
+        @media (min-width: 992px) {
+          .main-content-area {
+            margin-left: 260px !important;
+            width: calc(100% - 260px) !important;
+          }
+        }
+        select.form-select {
+          max-width: 100% !important;
+          text-overflow: ellipsis;
+        }
+      `}</style>
+
       <Sidebar />
 
-      <div className="flex-grow-1 p-4 bg-light min-vh-100" style={{ marginLeft: '260px' }}>
-        <h3 className="fw-bold mb-4">👥 Quản Lý Khách Thuê & Duyệt Yêu Cầu</h3>
-
+      <div className="main-content-area flex-grow-1 p-3 p-md-4">
         {/* KHUNG CHỌN DÃY TRỌ & MÃ MỜI */}
         <div className="card border-0 shadow-sm mb-4">
-          <div className="card-body">
+          <div className="card-body p-3 p-md-4">
             <div className="row align-items-center g-3">
-              <div className="col-md-5">
-                <label className="fw-bold text-dark mb-2 d-flex align-items-center">
+              <div className="col-12 col-md-5">
+                <label className="fw-bold text-dark mb-2 d-flex align-items-center small">
                   <i className="bi bi-house-door-fill text-primary me-2"></i>
                   Chọn Dãy Trọ:
                 </label>
                 <select
-                  className="form-select form-select-lg fw-semibold border-primary"
+                  className="form-select fw-semibold border-primary text-truncate"
                   value={selectedMotelId}
                   onChange={e => setSelectedMotelId(e.target.value)}
                 >
@@ -234,14 +271,14 @@ export default function TenantManagement() {
                 </select>
               </div>
 
-              <div className="col-md-7">
+              <div className="col-12 col-md-7">
                 {currentMotel ? (
-                  <div className="p-3 bg-white border border-primary-subtle rounded-3 shadow-sm d-flex justify-content-between align-items-center">
+                  <div className="p-3 bg-white border border-primary-subtle rounded-3 shadow-sm d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
                     <div>
-                      <small className="text-muted d-block fw-semibold text-uppercase">Mã Mời Gia Nhập:</small>
+                      <small className="text-muted d-block fw-semibold text-uppercase" style={{ fontSize: '0.75rem' }}>Mã Mời Gia Nhập:</small>
                       <div className="d-flex align-items-center gap-2 mt-1">
-                        <span className="fs-4 fw-bold text-primary font-monospace bg-light px-3 py-1 rounded border">
-                          <i className="bi bi-key-fill text-warning me-2"></i>
+                        <span className="fs-5 fs-md-4 fw-bold text-primary font-monospace bg-light px-2 px-md-3 py-1 rounded border">
+                          <i className="bi bi-key-fill text-warning me-1 me-md-2"></i>
                           {inviteCode || 'Chưa có mã'}
                         </span>
                         {inviteCode && (
@@ -255,13 +292,13 @@ export default function TenantManagement() {
                         )}
                       </div>
                     </div>
-                    <div className="text-end">
-                      <small className="text-muted d-block">Địa chỉ dãy trọ:</small>
-                      <span className="fw-semibold text-dark">{currentMotel.address || 'Chưa cập nhật'}</span>
+                    <div className="text-sm-end">
+                      <small className="text-muted d-block" style={{ fontSize: '0.75rem' }}>Địa chỉ dãy trọ:</small>
+                      <span className="fw-semibold text-dark small">{currentMotel.address || 'Chưa cập nhật'}</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 bg-light border rounded-3 text-muted text-center">
+                  <div className="p-3 bg-light border rounded-3 text-muted text-center small">
                     <i className="bi bi-info-circle me-2"></i>
                     Vui lòng chọn 1 dãy trọ để hiển thị Mã Mời
                   </div>
@@ -275,12 +312,12 @@ export default function TenantManagement() {
         <div className="card border-0 shadow-sm">
           <div className="card-header bg-white py-3">
             <div className="row align-items-center g-3">
-              <div className="col-md-4">
-                <h5 className="fw-bold m-0">Danh Sách Khách Thuê ({filteredTenants.length})</h5>
+              <div className="col-12 col-md-4">
+                <h5 className="fw-bold m-0 fs-6 fs-md-5">Danh Sách Khách Thuê ({filteredTenants.length})</h5>
               </div>
 
               {/* Bộ Lọc Trạng Thái */}
-              <div className="col-md-4">
+              <div className="col-12 col-sm-6 col-md-4">
                 <div className="d-flex align-items-center gap-2">
                   <span className="fw-semibold text-nowrap small text-muted">Trạng thái:</span>
                   <select
@@ -297,7 +334,7 @@ export default function TenantManagement() {
               </div>
 
               {/* Ô Tìm Kiếm */}
-              <div className="col-md-4">
+              <div className="col-12 col-sm-6 col-md-4">
                 <input
                   type="text"
                   className="form-control form-control-sm"
@@ -311,7 +348,7 @@ export default function TenantManagement() {
 
           <div className="card-body p-0">
             <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
+              <table className="table table-hover align-middle mb-0 text-nowrap">
                 <thead className="table-dark">
                   <tr>
                     <th>Họ và Tên</th>
@@ -365,7 +402,7 @@ export default function TenantManagement() {
                             <i className="bi bi-door-closed me-1"></i>
                             {roomName}
                             {contract && (
-                              <span className="badge bg-info-subtle text-info ms-2 small">
+                              <span className="badge bg-info-subtle text-info ms-2 small fw-normal">
                                 Hợp đồng: {contract.contractNumber || contract.id}
                               </span>
                             )}
@@ -401,7 +438,7 @@ export default function TenantManagement() {
                           <td className="text-center">
                             {hasActiveContract ? (
                               <span 
-                                className="text-muted small italic" 
+                                className="text-muted small fst-italic" 
                                 title="Không thể xóa khách đang có hợp đồng hoạt động"
                               >
                                 <i className="bi bi-lock-fill me-1"></i>Đang thuê

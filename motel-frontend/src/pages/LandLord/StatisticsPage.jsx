@@ -128,15 +128,15 @@ export default function StatisticsManagement() {
 
   // Cấu hình dữ liệu Biểu Đồ Cột (Doanh thu)
   const barChartData = {
-    labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
     datasets: [
       {
-        label: `Doanh Thu Thực Thu (VNĐ)`,
+        label: `Doanh Thu (VNĐ)`,
         data: monthlyRevenue,
         backgroundColor: 'rgba(13, 110, 253, 0.8)',
         borderColor: '#0d6efd',
         borderWidth: 1,
-        borderRadius: 5,
+        borderRadius: 4,
       },
     ],
   };
@@ -154,167 +154,203 @@ export default function StatisticsManagement() {
   };
 
   return (
-    <div className="d-flex">
-      {/* Sidebar cố định bên trái */}
-      <Sidebar />
-
-      {/* Nội dung chính thụt lề 260px khớp với Sidebar */}
-      <div className="flex-grow-1 p-4 bg-light min-vh-100" style={{ marginLeft: '260px' }}>
-
-        {/* Thanh tiêu đề và bộ lọc */}
-        <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-          <div>
-            <h3 className="fw-bold mb-1">📈 Báo Cáo & Thống Kê</h3>
-            <p className="text-muted m-0">Tổng quan doanh thu, hợp đồng và tình trạng thu tiền</p>
+    <div className="d-flex flex-column min-vh-100 bg-light">
+      {/* Header Mobile - Chỉ hiện trên màn hình < 992px */}
+      <header className="navbar navbar-dark bg-primary sticky-top px-3 shadow-sm d-lg-none" style={{ zIndex: 1030, height: '56px' }}>
+        <div className="d-flex align-items-center w-100 justify-content-between">
+          <div className="d-flex align-items-center gap-2">
+            <button className="btn btn-link text-white p-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
+              <i className="bi bi-list fs-3"></i>
+            </button>
+            <span className="navbar-brand fw-bold mb-0 me-0 fs-5">CHỦ TRỌ</span>
           </div>
-
-          <div className="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm border">
-            <select 
-              className="form-select form-select-sm" 
-              style={{ width: '160px' }}
-              value={selectedMotelId} 
-              onChange={e => setSelectedMotelId(e.target.value)}
-            >
-              {motels.map(m => (
-                <option key={m.id} value={m.id}>{m.name || `Dãy #${m.id}`}</option>
-              ))}
-            </select>
-
-            <select 
-              className="form-select form-select-sm" 
-              style={{ width: '95px' }}
-              value={selectedYear} 
-              onChange={e => setSelectedYear(Number(e.target.value))}
-            >
-              {[2024, 2025, 2026, 2027].map(y => (
-                <option key={y} value={y}>Năm {y}</option>
-              ))}
-            </select>
+          <div className="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }}>
+            N
           </div>
         </div>
+      </header>
 
-        {errorMessage && (
-          <div className="alert alert-danger py-2 mb-4" role="alert">
-            <i className="bi bi-exclamation-triangle-fill me-2"></i>
-            {errorMessage}
+      {/* Responsive Style cho Sidebar & Container */}
+      <style>{`
+        .main-content-area {
+          margin-left: 0 !important;
+          width: 100% !important;
+        }
+        @media (min-width: 992px) {
+          .main-content-area {
+            margin-left: 260px !important;
+            width: calc(100% - 260px) !important;
+          }
+        }
+      `}</style>
+
+      {/* Main Container Layout */}
+      <div className="d-flex flex-grow-1">
+        {/* Sidebar Component */}
+        <Sidebar />
+
+        {/* Nội dung chính */}
+        <div className="main-content-area flex-grow-1 p-3 p-md-4">
+
+          {/* Thanh tiêu đề và bộ lọc */}
+          <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-3 mb-md-4 gap-2">
+
+            {/* Bộ lọc Dãy Trọ & Năm */}
+            <div className="d-flex flex-wrap gap-2 align-items-center bg-white p-2 rounded shadow-sm border align-self-start align-self-sm-center">
+              <select 
+                className="form-select form-select-sm" 
+                style={{ width: '130px' }}
+                value={selectedMotelId} 
+                onChange={e => setSelectedMotelId(e.target.value)}
+              >
+                {motels.map(m => (
+                  <option key={m.id} value={m.id}>{m.name || `Dãy #${m.id}`}</option>
+                ))}
+              </select>
+
+              <select 
+                className="form-select form-select-sm" 
+                style={{ width: '90px' }}
+                value={selectedYear} 
+                onChange={e => setSelectedYear(Number(e.target.value))}
+              >
+                {[2024, 2025, 2026, 2027].map(y => (
+                  <option key={y} value={y}>Năm {y}</option>
+                ))}
+              </select>
+            </div>
           </div>
-        )}
 
-        {/* 4 Thẻ KPI Thống Kê Nhanh */}
-        <div className="row g-3 mb-4">
-          <div className="col-12 col-sm-6 col-xl-3">
-            <div className="card border-0 shadow-sm border-start border-primary border-4 p-3 bg-white">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <span className="text-muted small fw-semibold text-uppercase">Doanh Thu Năm {selectedYear}</span>
-                  <h4 className="fw-bold text-primary mt-1 mb-0">{formatMoney(kpi.totalRevenueYear)}</h4>
+          {errorMessage && (
+            <div className="alert alert-danger py-2 mb-3 small" role="alert">
+              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+              {errorMessage}
+            </div>
+          )}
+
+          {/* 4 Thẻ KPI Thống Kê Nhanh */}
+          <div className="row g-2 g-md-3 mb-4">
+            <div className="col-6 col-xl-3">
+              <div className="card border-0 shadow-sm border-start border-primary border-4 p-2 p-md-3 bg-white h-100">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <span className="text-muted small fw-semibold text-uppercase d-block" style={{ fontSize: '0.75rem' }}>Doanh Thu {selectedYear}</span>
+                    <h6 className="fw-bold text-primary mt-1 mb-0 fs-6 fs-md-5">{formatMoney(kpi.totalRevenueYear)}</h6>
+                  </div>
+                  <div className="fs-3 text-primary d-none d-sm-block">
+                    <i className="bi bi-cash-stack"></i>
+                  </div>
                 </div>
-                <div className="fs-2 text-primary">
-                  <i className="bi bi-cash-stack"></i>
+              </div>
+            </div>
+
+            <div className="col-6 col-xl-3">
+              <div className="card border-0 shadow-sm border-start border-success border-4 p-2 p-md-3 bg-white h-100">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <span className="text-muted small fw-semibold text-uppercase d-block" style={{ fontSize: '0.75rem' }}>Phòng Đang Thuê</span>
+                    <h6 className="fw-bold text-success mt-1 mb-0 fs-6 fs-md-5">{kpi.occupiedRooms} phòng</h6>
+                  </div>
+                  <div className="fs-3 text-success d-none d-sm-block">
+                    <i className="bi bi-house-check"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-6 col-xl-3">
+              <div className="card border-0 shadow-sm border-start border-danger border-4 p-2 p-md-3 bg-white h-100">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <span className="text-muted small fw-semibold text-uppercase d-block" style={{ fontSize: '0.75rem' }}>Hóa Đơn Nợ</span>
+                    <h6 className="fw-bold text-danger mt-1 mb-0 fs-6 fs-md-5">{kpi.unpaidCount} HĐ</h6>
+                  </div>
+                  <div className="fs-3 text-danger d-none d-sm-block">
+                    <i className="bi bi-exclamation-circle"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-6 col-xl-3">
+              <div className="card border-0 shadow-sm border-start border-info border-4 p-2 p-md-3 bg-white h-100">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <span className="text-muted small fw-semibold text-uppercase d-block" style={{ fontSize: '0.75rem' }}>Hóa Đơn Đã Thu</span>
+                    <h6 className="fw-bold text-info mt-1 mb-0 fs-6 fs-md-5">{invoiceStatus.paid} HĐ</h6>
+                  </div>
+                  <div className="fs-3 text-info d-none d-sm-block">
+                    <i className="bi bi-check-circle"></i>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="col-12 col-sm-6 col-xl-3">
-            <div className="card border-0 shadow-sm border-start border-success border-4 p-3 bg-white">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <span className="text-muted small fw-semibold text-uppercase">Hợp Đồng Đang Thuê</span>
-                  <h4 className="fw-bold text-success mt-1 mb-0">{kpi.occupiedRooms} phòng</h4>
-                </div>
-                <div className="fs-2 text-success">
-                  <i className="bi bi-house-check"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-sm-6 col-xl-3">
-            <div className="card border-0 shadow-sm border-start border-danger border-4 p-3 bg-white">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <span className="text-muted small fw-semibold text-uppercase">Hóa Đơn Nợ Tiền</span>
-                  <h4 className="fw-bold text-danger mt-1 mb-0">{kpi.unpaidCount} hóa đơn</h4>
-                </div>
-                <div className="fs-2 text-danger">
-                  <i className="bi bi-exclamation-circle"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-sm-6 col-xl-3">
-            <div className="card border-0 shadow-sm border-start border-info border-4 p-3 bg-white">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <span className="text-muted small fw-semibold text-uppercase">Hóa Đơn Đã Thu</span>
-                  <h4 className="fw-bold text-info mt-1 mb-0">{invoiceStatus.paid} hóa đơn</h4>
-                </div>
-                <div className="fs-2 text-info">
-                  <i className="bi bi-check-circle"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Biểu Đồ Thống Kê */}
-        <div className="row g-4">
-          {/* Biểu đồ Doanh Thu 12 Tháng */}
-          <div className="col-12 col-lg-8">
-            <div className="card border-0 shadow-sm p-4 bg-white h-100">
-              <h5 className="fw-bold mb-4 text-dark">📊 Biểu Đồ Doanh Thu Theo Tháng (Năm {selectedYear})</h5>
-              {isLoading ? (
-                <div className="text-center py-5 text-muted">
-                  <div className="spinner-border text-primary me-2" role="status"></div>
-                  Đang tải biểu đồ...
-                </div>
-              ) : (
-                <div style={{ minHeight: '320px', position: 'relative' }}>
-                  <Bar 
-                    data={barChartData} 
-                    options={{ 
-                      responsive: true, 
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: { position: 'top' }
-                      }
-                    }} 
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Biểu đồ Trạng Thái Hóa Đơn */}
-          <div className="col-12 col-lg-4">
-            <div className="card border-0 shadow-sm p-4 bg-white h-100">
-              <h5 className="fw-bold mb-4 text-dark">🍩 Trạng Thái Thu Hóa Đơn</h5>
-              {isLoading ? (
-                <div className="text-center py-5 text-muted">
-                  <div className="spinner-border text-primary me-2" role="status"></div>
-                  Đang tải...
-                </div>
-              ) : (
-                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '280px' }}>
-                  {invoiceStatus.paid === 0 && invoiceStatus.unpaid === 0 ? (
-                    <div className="text-muted">Chưa có dữ liệu hóa đơn cho năm {selectedYear}</div>
-                  ) : (
-                    <Pie 
-                      data={pieChartData} 
+          {/* Biểu Đồ Thống Kê */}
+          <div className="row g-3">
+            {/* Biểu đồ Doanh Thu 12 Tháng */}
+            <div className="col-12 col-lg-8">
+              <div className="card border-0 shadow-sm p-3 bg-white h-100">
+                <h6 className="fw-bold mb-3 text-dark small">📊 Doanh Thu Theo Tháng (Năm {selectedYear})</h6>
+                {isLoading ? (
+                  <div className="text-center py-5 text-muted small">
+                    <div className="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    Đang tải biểu đồ...
+                  </div>
+                ) : (
+                  <div style={{ minHeight: '260px', height: '300px', position: 'relative', width: '100%' }}>
+                    <Bar 
+                      data={barChartData} 
                       options={{ 
                         responsive: true, 
-                        maintainAspectRatio: false 
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+                        },
+                        scales: {
+                          x: { ticks: { font: { size: 10 } } },
+                          y: { ticks: { font: { size: 10 } } }
+                        }
                       }} 
                     />
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Biểu đồ Trạng Thái Hóa Đơn */}
+            <div className="col-12 col-lg-4">
+              <div className="card border-0 shadow-sm p-3 bg-white h-100">
+                <h6 className="fw-bold mb-3 text-dark small">🍩 Trạng Thái Hóa Đơn</h6>
+                {isLoading ? (
+                  <div className="text-center py-5 text-muted small">
+                    <div className="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    Đang tải...
+                  </div>
+                ) : (
+                  <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '240px', height: '280px', width: '100%' }}>
+                    {invoiceStatus.paid === 0 && invoiceStatus.unpaid === 0 ? (
+                      <div className="text-muted small">Chưa có dữ liệu hóa đơn cho năm {selectedYear}</div>
+                    ) : (
+                      <Pie 
+                        data={pieChartData} 
+                        options={{ 
+                          responsive: true, 
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                          }
+                        }} 
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
+        </div>
       </div>
     </div>
   );

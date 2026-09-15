@@ -23,9 +23,7 @@ export default function Login() {
       }
       // Lưu thông tin vào localStorage
       localStorage.setItem('token', token);
-      console.log(token)
       localStorage.setItem('userId', userId);
-      console.log(userId);
 
       localStorage.setItem('username', response.data.username);
       localStorage.setItem('role', response.data.role);
